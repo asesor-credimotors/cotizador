@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Crédito — Credimotors</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f3ef;
+      --dark: #1a1a1a;
+      --muted: #888;
+      --border: #e0dcd6;
+      --card-bg: #fff;
+      --accent: #25D366;
+    }
+
+    body {
+      font-family: 'Instrument Sans', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--dark);
+      color: #f5f3ef;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-brand { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #666; margin-bottom: 4px; }
+    .header-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .header-wa { color: #25D366; font-weight: 700; font-size: 14px; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .header-wa-sub { font-size: 9px; color: #666; letter-spacing: 1px; text-transform: uppercase; text-align: right; margin-top: 3px; }
+
+    /* LAYOUT */
+    .container { max-width: 700px; margin: 0 auto; padding: 24px 16px 60px; }
+
+    /* SECTION TITLE */
+    .sec-title {
+      font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+      color: #999; padding: 20px 0 12px;
+      border-bottom: 1.5px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    /* CARD DARK */
+    .card-dark {
+      background: var(--dark);
+      color: #f5f3ef;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #666; margin-bottom: 6px; }
+    .card-amount { font-size: clamp(2rem, 8vw, 3rem); font-weight: 800; letter-spacing: -1.5px; line-height: 1; margin-bottom: 4px; }
+    .card-sub { font-size: 12px; color: #888; margin-bottom: 16px; }
+    .card-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; padding-top: 16px;
+      border-top: 1px solid #2e2e2e;
+    }
+    .mini-label { font-size: 9px; color: #666; margin-bottom: 3px; }
+    .mini-val { font-size: 15px; font-weight: 700; }
+    .mini-sub { font-size: 9px; color: #888; margin-top: 2px; }
+    .mini-sub.yellow { color: #facc15; }
+
+    /* PLACEHOLDER */
+    .placeholder {
+      padding: 20px 0;
+      color: #555;
+      font-size: 15px;
+      text-align: center;
+    }
+
+    /* INPUTS */
+    .form-section { background: var(--card-bg); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+    .form-lbl { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; letter-spacing: 0.3px; }
+
+    /* año buttons */
+    .anio-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .anio-btn {
+      padding: 8px 14px; border-radius: 6px;
+      border: 1.5px solid #d0ccc4;
+      background: transparent; color: #666;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .15s;
+      font-family: 'Instrument Sans', sans-serif;
+    }
+    .anio-btn.active { border: 2px solid var(--dark); background: var(--dark); color: #f5f3ef; font-weight: 700; }
+
+    /* plazo buttons */
+    .plazo-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .plazo-btn {
+      padding: 12px 8px; border-radius: 8px;
+      border: 1.5px solid #d0ccc4;
+      background: transparent; color: #333;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+      font-family: 'Instrument Sans', sans-serif;
+      min-width: 72px; text-align: center;
+      opacity: 1;
+    }
+    .plazo-btn.active { border: 2px solid var(--dark); background: var(--dark); color: #eee; }
+    .plazo-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* slider + input */
+    .input-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-bottom: 6px; }
+    .input-text {
+      border: 1.5px solid #d0ccc4; border-radius: 8px;
+      padding: 10px 12px; font-size: 15px; font-weight: 600;
+      color: var(--dark); background: #fff;
+      font-family: 'Instrument Sans', sans-serif;
+      width: 100%; outline: none;
+      transition: border-color .15s;
+    }
+    .input-text:focus { border-color: var(--dark); }
+    input[type=range] {
+      width: 100%; accent-color: var(--dark);
+      height: 4px; margin-bottom: 4px;
+    }
+    .range-labels { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 16px; }
+
+    /* FILA */
+    .fila { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; font-size: 13px; border-bottom: 1px solid #f0ede8; }
+    .fila-label { color: #666; }
+    .fila-val { font-weight: 500; }
+    .fila-bold .fila-val { font-weight: 700; }
+    .fila-sep { height: 1px; background: var(--border); margin: 12px 0; }
+
+    /* AVISO */
+    .aviso {
+      background: #fff8e6; border: 1px solid #f0d060; border-radius: 8px;
+      padding: 10px 14px; font-size: 12px; color: #7a5a00;
+      display: flex; gap: 8px; align-items: flex-start; margin: 8px 0 4px;
+    }
+    .nota {
+      background: #f0ede8; border-radius: 10px; padding: 14px 16px;
+      margin-top: 12px; font-size: 11px; color: #888; line-height: 1.7;
+    }
+
+    /* TABLE */
+    .table-toggle {
+      width: 100%; padding: 14px 16px; border-radius: 10px;
+      border: 1.5px solid #d0ccc4; background: transparent;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 14px; font-weight: 600; color: var(--dark);
+      cursor: pointer; margin-bottom: 0;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s;
+    }
+    .table-toggle:hover { background: #f0ede8; }
+    .table-wrap { overflow-x: auto; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead tr { background: var(--dark); color: #f5f3ef; }
+    th { padding: 8px 10px; text-align: right; font-weight: 600; white-space: nowrap; }
+    tbody tr:nth-child(even) { background: #f8f7f4; }
+    tbody td { padding: 7px 10px; text-align: right; }
+    tfoot tr { background: #f0ede8; font-weight: 700; }
+    tfoot td { padding: 10px; text-align: right; }
+
+    /* ACTION BUTTONS */
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; margin-bottom: 32px; }
+    .btn-pdf, .btn-wa {
+      padding: 14px 16px; border-radius: 12px;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s; border: none;
+    }
+    .btn-pdf { background: var(--dark); color: #f5f3ef; border: 2px solid var(--dark); }
+    .btn-pdf:hover { background: #333; }
+    .btn-wa { background: #25D366; color: #fff; }
+    .btn-wa:hover { background: #1ebe5a; }
+
+    /* hidden */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-brand">Oziel Gámez — Credimotors</div>
+    <div class="header-title">Simulador de Crédito</div>
+  </div>
+  <div>
+    <a class="header-wa" href="https://wa.me/528116247199">
+      <svg width="16" height="16" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.962-1.401A9.953 9.953 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.95 7.95 0 01-4.076-1.12l-.292-.173-3.025.853.853-3.025-.173-.292A7.95 7.95 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
+      811 624 7199
+    </a>
+    <div class="header-wa-sub">Asesor Credimotors</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- FORM -->
+  <div class="form-section">
+
+    <!-- AÑO -->
+    <div class="sec-title">Año del vehículo</div>
+    <div class="anio-grid" id="anio-grid"></div>
+
+    <!-- PRECIO -->
+    <div class="sec-title">Precio del vehículo</div>
+    <div class="input-row">
+      <input class="input-text" type="text" id="precio-input" placeholder="$0" inputmode="numeric" />
+    </div>
+    <input type="range" id="precio-slider" min="50000" max="2000000" step="5000" value="0" />
+    <div class="range-labels"><span>$50,000</span><span>$2,000,000</span></div>
+
+    <!-- ENGANCHE -->
+    <div class="sec-title">Enganche (<span id="pct-label">10</span>% del valor · mín. 10%)</div>
+    <div class="input-row">
+      <input class="input-text" type="text" id="enganche-input" placeholder="$0" inputmode="numeric" />
+    </div>
+    <input type="range" id="enganche-slider" min="0" max="100" step="1" value="0" />
+    <div class="range-labels"><span id="eng-min-label">Mín. 10%</span><span id="eng-max-label">70%</span></div>
+    <div class="fila" style="margin-bottom:20px">
+      <span class="fila-label">Monto a financiar</span>
+      <span class="fila-val" id="monto-label">—</span>
+    </div>
+
+    <!-- PLAZO -->
+    <div class="sec-title">Plazo de financiamiento</div>
+    <div class="plazo-grid" id="plazo-grid"></div>
+    <div id="plazo-leyenda" style="font-size:12px;color:#888;margin-top:12px;line-height:1.6;"></div>
+
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="resultado-card" class="card-dark hidden">
+    <div class="card-label">Mensualidad aproximada</div>
+    <div class="card-amount" id="res-mensualidad">$0.00</div>
+    <div class="card-sub" id="res-sub"></div>
+    <div class="card-grid">
+      <div>
+        <div class="mini-label">Pago inicial estimado</div>
+        <div class="mini-val" id="res-pago-inicial">$0.00</div>
+        <div class="mini-sub yellow">Sin incluir seguro de auto</div>
+      </div>
+      <div>
+        <div class="mini-label">Comisión apertura</div>
+        <div class="mini-val" id="res-comision">$0.00</div>
+      </div>
+      <div>
+        <div class="mini-label">% Enganche</div>
+        <div class="mini-val" id="res-pct">0%</div>
+      </div>
+      <div>
+        <div class="mini-label">Año del auto</div>
+        <div class="mini-val" id="res-anio-show">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="placeholder-card" class="card-dark">
+    <div class="placeholder" style="color:#555">Ingresa el precio del vehículo y el enganche para ver tu simulación.</div>
+  </div>
+
+  <!-- DESGLOSE -->
+  <div id="desglose-section" class="form-section hidden">
+    <div class="sec-title">Desglose cotización</div>
+    <div class="fila"><span class="fila-label">Valor del auto</span><span class="fila-val" id="d-precio"></span></div>
+    <div class="fila"><span class="fila-label">Monto a financiar</span><span class="fila-val" id="d-monto"></span></div>
+    <div class="fila"><span class="fila-label">Enganche</span><span class="fila-val" id="d-enganche"></span></div>
+    <div class="fila"><span class="fila-label">Comisión por apertura (2.5%)</span><span class="fila-val" id="d-comision"></span></div>
+    <div class="fila-sep"></div>
+    <div class="fila fila-bold"><span class="fila-label">Pago inicial (enganche + comisión)</span><span class="fila-val" id="d-pago-inicial"></span></div>
+    <div class="aviso">⚠️ <span>El pago inicial no incluye el seguro de auto. Este monto se agrega por separado según la aseguradora.</span></div>
+    <div class="fila-sep"></div>
+    <div class="nota">
+      <strong style="color:#555">Tasa anual:</strong> desde el 12.99% al 16.49%<br>
+      *Simulación ilustrativa, no representa oferta formal. Sujeta a aprobación de crédito. Las mensualidades pueden variar según perfil, plazo y condiciones de financiamiento.
+    </div>
+  </div>
+
+  <!-- TABLA AMORTIZACIÓN -->
+  <div id="tabla-section" class="form-section hidden">
+    <div class="sec-title">Tabla de amortización</div>
+    <button class="table-toggle" id="tabla-toggle">Ver tabla de amortización completa</button>
+    <div class="table-wrap hidden" id="tabla-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Fecha</th><th>Saldo</th><th>Capital</th><th>Intereses</th><th>IVA</th><th>Mensualidad</th></tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align:right;font-size:13px">Totales</td>
+            <td id="tot-capital"></td>
+            <td id="tot-intereses"></td>
+            <td id="tot-iva"></td>
+            <td id="tot-pago"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- BOTONES ACCIÓN -->
+  <div id="btn-section" class="btn-grid hidden">
+    <button class="btn-pdf" id="btn-pdf">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 16l-4-4h2.5V4h3v8H16l-4 4z" fill="#f5f3ef"/><path d="M4 18h16v2H4z" fill="#f5f3ef"/></svg>
+      Guardar PDF
+    </button>
+    <button class="btn-wa" id="btn-wa">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.962-1.401A9.953 9.953 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.95 7.95 0 01-4.076-1.12l-.292-.173-3.025.853.853-3.025-.173-.292A7.95 7.95 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/></svg>
+      Compartir por WhatsApp
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ── CONFIG ──
+  const TASA_ANUAL = 16.49;
+  const COMISION_PCT = 2.5;
+  const IVA = 0.16;
+
+  const PLAZOS_POR_ANIO = { 2017:[12,24], 2018:[12,24,36], 2019:[12,24,36,48] };
+  const ANIOS_NUEVOS = [2020,2021,2022,2023,2024,2025,2026];
+  const TODOS_ANIOS = [2017,2018,2019,...ANIOS_NUEVOS];
+
+  // ── STATE ──
+  let estado = { anio: 2026, precio: 0, enganche: 0, plazo: null };
+  let resultado = null;
+
+  // ── FORMAT ──
+  const fmx = v => new Intl.NumberFormat('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v).replace(/^/,'$');
+  const fmx0 = v => '$' + new Intl.NumberFormat('es-MX',{maximumFractionDigits:0}).format(v);
+  const parseMXN = s => parseFloat(String(s).replace(/[^0-9.]/g,'')) || 0;
+
+  // ── PLAZOS ──
+  function getPlazos(anio) { return PLAZOS_POR_ANIO[anio] || [12,24,36,48,60]; }
+
+  // ── CALCULAR ──
+  function calcular(monto, plazo) {
+    if (monto <= 0) return null;
+    const tm = TASA_ANUAL / 100 / 12;
+    const te = tm * (1 + IVA);
+    const n = plazo;
+    const factor = te * Math.pow(1+te,n) / (Math.pow(1+te,n)-1);
+    const pagoBase = monto * factor;
+    let saldo = monto;
+    const tabla = [];
+    let sumInt=0, sumIva=0;
+    for (let i=1; i<=n; i++) {
+      const interes = saldo * tm;
+      const iva = interes * IVA;
+      const capital = pagoBase - interes - iva;
+      const pago = capital + interes + iva;
+      tabla.push({periodo:i, saldo, capital, intereses:interes, iva, pago});
+      sumInt += interes; sumIva += iva;
+      saldo = Math.max(0, saldo - capital);
+    }
+    if (saldo > 0.01) { tabla[n-1].capital += saldo; tabla[n-1].pago += saldo; }
+    return {
+      tabla,
+      mensualidad: tabla[0]?.pago ?? 0,
+      totalPagado: tabla.reduce((s,r)=>s+r.pago,0),
+      totalIntereses: sumInt,
+      totalIVA: sumIva,
+    };
+  }
+
+  // ── BUILD AÑO BUTTONS ──
+  const anioGrid = document.getElementById('anio-grid');
+  TODOS_ANIOS.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'anio-btn';
+    btn.textContent = a;
+    btn.onclick = () => { estado.anio = a; renderAnios(); renderPlazos(); recalcular(); };
+    anioGrid.appendChild(btn);
+  });
+
+  function renderAnios() {
+    anioGrid.querySelectorAll('.anio-btn').forEach((btn,i) => {
+      btn.classList.toggle('active', TODOS_ANIOS[i] === estado.anio);
+    });
+  }
+
+  // ── BUILD PLAZO BUTTONS ──
+  const plazoGrid = document.getElementById('plazo-grid');
+  const ALL_PLAZOS = [12,24,36,48,60];
+  ALL_PLAZOS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'plazo-btn';
+    btn.dataset.plazo = p;
+    btn.innerHTML = `${p}<br><span style="font-size:10px;font-weight:400">meses</span>`;
+    btn.onclick = () => {
+      if (btn.classList.contains('disabled')) return;
+      estado.plazo = p;
+      renderPlazos();
+      recalcular();
+    };
+    plazoGrid.appendChild(btn);
+  });
+
+  function renderPlazos() {
+    const disponibles = estado.anio ? getPlazos(estado.anio) : ALL_PLAZOS;
+    plazoGrid.querySelectorAll('.plazo-btn').forEach(btn => {
+      const p = parseInt(btn.dataset.plazo);
+      const ok = disponibles.includes(p);
+      btn.classList.toggle('disabled', !ok);
+      btn.classList.toggle('active', estado.plazo === p);
+      if (!ok && estado.plazo === p) { estado.plazo = null; }
+    });
+    // leyenda
+    const leyenda = document.getElementById('plazo-leyenda');
+    if (estado.anio) {
+      const maxPlazo = Math.max(...disponibles);
+      const extra = [2017,2018,2019].includes(estado.anio) ? ' Si requieres más plazo, coméntame.' : '';
+      leyenda.textContent = `Plazo máximo de ${maxPlazo} meses para modelos ${estado.anio}.${extra}`;
+    } else {
+      leyenda.textContent = '';
+    }
+
+    // auto-select first available if none selected
+    if (!estado.plazo && disponibles.length) {
+      estado.plazo = disponibles[0];
+      renderPlazos();
+    }
+  }
+
+  // ── PRECIO ──
+  const precioInput = document.getElementById('precio-input');
+  const precioSlider = document.getElementById('precio-slider');
+
+  precioInput.addEventListener('input', () => {
+    const v = parseMXN(precioInput.value);
+    estado.precio = v;
+    precioSlider.value = Math.min(v, 2000000);
+    sincEnganche();
+    recalcular();
+  });
+  precioSlider.addEventListener('input', () => {
+    estado.precio = parseInt(precioSlider.value);
+    precioInput.value = fmx0(estado.precio);
+    sincEnganche();
+    recalcular();
+  });
+
+  // ── ENGANCHE ──
+  const engancheInput = document.getElementById('enganche-input');
+  const engancheSlider = document.getElementById('enganche-slider');
+  const pctLabel = document.getElementById('pct-label');
+  const montoLabel = document.getElementById('monto-label');
+
+  function sincEnganche() {
+    const precio = estado.precio;
+    if (!precio) return;
+    const eMin = Math.round(precio * 0.10);
+    const eMax = Math.round(precio * 0.70);
+    engancheSlider.min = eMin;
+    engancheSlider.max = eMax;
+    if (estado.enganche < eMin) { estado.enganche = eMin; }
+    if (estado.enganche > eMax) { estado.enganche = eMax; }
+    engancheInput.value = fmx0(estado.enganche);
+    engancheSlider.value = estado.enganche;
+    updatePct();
+  }
+
+  function updatePct() {
+    const precio = estado.precio;
+    const eng = estado.enganche;
+    if (!precio) { pctLabel.textContent = '10'; montoLabel.textContent = '—'; return; }
+    const pct = ((eng / precio) * 100).toFixed(1);
+    pctLabel.textContent = pct;
+    const monto = Math.max(0, precio - eng);
+    montoLabel.textContent = fmx(monto);
+    document.getElementById('pct-label').textContent = pct;
+  }
+
+  engancheInput.addEventListener('input', () => {
+    const v = parseMXN(engancheInput.value);
+    estado.enganche = v;
+    updatePct();
+    recalcular();
+  });
+  engancheInput.addEventListener('blur', () => {
+    sincEnganche();
+    recalcular();
+  });
+  engancheSlider.addEventListener('input', () => {
+    estado.enganche = parseInt(engancheSlider.value);
+    engancheInput.value = fmx0(estado.enganche);
+    updatePct();
+    recalcular();
+  });
+
+  // ── RECALCULAR ──
+  function recalcular() {
+    const { precio, enganche, plazo, anio } = estado;
+    const listo = precio > 0 && enganche > 0 && plazo;
+    const monto = Math.max(0, precio - enganche);
+    const comision = monto * (COMISION_PCT / 100);
+    const pagoInicial = enganche + comision;
+    const pct = precio > 0 ? ((enganche/precio)*100).toFixed(1) : 0;
+
+    document.getElementById('placeholder-card').classList.toggle('hidden', listo);
+    document.getElementById('resultado-card').classList.toggle('hidden', !listo);
+    document.getElementById('desglose-section').classList.toggle('hidden', !listo);
+    document.getElementById('tabla-section').classList.toggle('hidden', !listo);
+    document.getElementById('btn-section').classList.toggle('hidden', !listo);
+
+    if (!listo) { resultado = null; return; }
+
+    const calc = calcular(monto, plazo);
+    resultado = { ...calc, precio, enganche, monto, comision, pagoInicial, plazo, anio, pct };
+
+    // resultado card
+    document.getElementById('res-mensualidad').textContent = fmx(calc.mensualidad);
+    document.getElementById('res-sub').textContent = `${plazo} mensualidades · Puedes aportar a capital o liquidar antes`;
+    document.getElementById('res-pago-inicial').textContent = fmx(pagoInicial);
+    document.getElementById('res-comision').textContent = fmx(comision);
+    document.getElementById('res-pct').textContent = `${pct}%`;
+    document.getElementById('res-anio-show').textContent = anio || '—';
+
+    // desglose
+    document.getElementById('d-precio').textContent = fmx(precio);
+    document.getElementById('d-monto').textContent = fmx(monto);
+    document.getElementById('d-enganche').textContent = fmx(enganche);
+    document.getElementById('d-comision').textContent = fmx(comision);
+    document.getElementById('d-pago-inicial').textContent = fmx(pagoInicial);
+
+    // tabla
+    const tbody = document.getElementById('tabla-body');
+    tbody.innerHTML = '';
+    calc.tabla.forEach((row, i) => {
+      const d = new Date(2026, 5, 18);
+      d.setMonth(d.getMonth() + i);
+      const fs = d.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'});
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:#999">${row.periodo}</td>
+        <td style="color:#666;white-space:nowrap">${fs}</td>
+        <td>${fmx(row.saldo)}</td>
+        <td>${fmx(row.capital)}</td>
+        <td>${fmx(row.intereses)}</td>
+        <td>${fmx(row.iva)}</td>
+        <td style="font-weight:700">${fmx(row.pago)}</td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('tot-capital').textContent = fmx(calc.tabla.reduce((s,r)=>s+r.capital,0));
+    document.getElementById('tot-intereses').textContent = fmx(calc.totalIntereses);
+    document.getElementById('tot-iva').textContent = fmx(calc.totalIVA);
+    document.getElementById('tot-pago').textContent = fmx(calc.totalPagado);
+  }
+
+  // ── TABLA TOGGLE ──
+  document.getElementById('tabla-toggle').addEventListener('click', () => {
+    const wrap = document.getElementById('tabla-wrap');
+    const btn = document.getElementById('tabla-toggle');
+    wrap.classList.toggle('hidden');
+    btn.textContent = wrap.classList.contains('hidden') ? 'Ver tabla de amortización completa' : 'Ocultar tabla';
+  });
+
+  // ── PDF ──
+  document.getElementById('btn-pdf').addEventListener('click', () => {
+    if (!resultado) return;
+    const { precio, enganche, monto, comision, pagoInicial, mensualidad, totalPagado, totalIntereses, totalIVA, tabla, plazo, anio, pct } = resultado;
+    const fechaHoy = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+    const filas = tabla.map((row,i) => {
+      const d = new Date(2026,5,18); d.setMonth(d.getMonth()+i);
+      const fs = d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const bg = i%2===0?'#ffffff':'#f8f7f4';
+      return `<tr style="background:${bg}">
+        <td style="padding:5px 8px;text-align:right;color:#999">${row.periodo}</td>
+        <td style="padding:5px 8px;text-align:right;color:#666">${fs}</td>
+        <td style="padding:5px 8px;text-align:right">${fmx(row.saldo)}</td>
+        <td style="padding:5px 8px;text-align:right">${fmx(row.capital)}</td>
+        <td style="padding:5px 8px;text-align:right">${fmx(row.intereses)}</td>
+        <td style="padding:5px 8px;text-align:right">${fmx(row.iva)}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:700">${fmx(row.pago)}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <title>Cotización Credimotors</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Instrument Sans',Arial,sans-serif;color:#1a1a1a;background:#fff;font-size:12px}
+      .header{background:#1a1a1a;color:#f5f3ef;padding:24px 32px;display:flex;justify-content:space-between;align-items:center}
+      .hbrand{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px}
+      .htitle{font-size:22px;font-weight:800;letter-spacing:-.5px}
+      .body{padding:24px 32px}
+      .stitle{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#999;padding-bottom:8px;border-bottom:1.5px solid #e0dcd6;margin-bottom:14px;margin-top:20px}
+      .card{background:#1a1a1a;color:#f5f3ef;border-radius:12px;padding:20px 24px;margin-bottom:20px}
+      .clabel{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#666;margin-bottom:6px}
+      .camount{font-size:36px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin-bottom:4px}
+      .csub{font-size:11px;color:#888}
+      .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid #2e2e2e}
+      .ml{font-size:9px;color:#666;margin-bottom:3px}
+      .mv{font-size:14px;font-weight:700}
+      .fila{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:12px}
+      .aviso{background:#fff8e6;border:1px solid #f0d060;border-radius:6px;padding:8px 12px;font-size:11px;color:#7a5a00;margin:8px 0;display:flex;gap:6px}
+      .nota{background:#f0ede8;border-radius:8px;padding:10px 14px;font-size:10px;color:#888;line-height:1.6;margin-top:12px}
+      table{width:100%;border-collapse:collapse;font-size:11px}
+      thead tr{background:#1a1a1a;color:#f5f3ef}
+      th{padding:7px 8px;text-align:right;font-weight:600;white-space:nowrap}
+      tfoot tr{background:#f0ede8;font-weight:700}
+      td{padding:5px 8px;text-align:right}
+      @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:12mm;size:A4}}
+    </style></head><body>
+    <div class="header">
+      <div><div class="hbrand">Oziel Gámez — Credimotors</div><div class="htitle">Simulador de Crédito</div></div>
+      <div style="text-align:right">
+        <a href="https://wa.me/528116247199" style="color:#25D366;font-weight:700;font-size:14px;text-decoration:none">WhatsApp: 811 624 7199</a><br>
+        <span style="font-size:9px;color:#666;letter-spacing:1px;text-transform:uppercase">Asesor Credimotors</span><br>
+        <span style="font-size:9px;color:#666">${fechaHoy}</span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="card">
+        <div class="clabel">Mensualidad aproximada</div>
+        <div class="camount">${fmx(mensualidad)}</div>
+        <div class="csub">${plazo} mensualidades · Puedes aportar a capital o liquidar antes</div>
+        <div class="cgrid">
+          <div><div class="ml">Pago inicial estimado</div><div class="mv">${fmx(pagoInicial)}</div><div style="font-size:9px;color:#facc15">Sin incluir seguro de auto</div></div>
+          <div><div class="ml">Comisión apertura</div><div class="mv">${fmx(comision)}</div></div>
+          <div><div class="ml">% Enganche</div><div class="mv">${pct}%</div></div>
+          <div><div class="ml">Año del auto</div><div class="mv">${anio||'—'}</div></div>
+        </div>
+      </div>
+      <div class="stitle">Desglose cotización</div>
+      <div class="fila"><span style="color:#666">Precio del auto</span><span>${fmx(precio)}</span></div>
+      <div class="fila"><span style="color:#666">Monto a financiar</span><span>${fmx(monto)}</span></div>
+      <div class="fila"><span style="color:#666">Enganche</span><span>${fmx(enganche)}</span></div>
+      <div class="fila"><span style="color:#666">Comisión apertura (2.5%)</span><span>${fmx(comision)}</span></div>
+      <div class="fila" style="font-weight:700"><span>Pago inicial (enganche + comisión)</span><span>${fmx(pagoInicial)}</span></div>
+      <div class="aviso">⚠️ El pago inicial no incluye el seguro de auto. Este monto se agrega por separado según la aseguradora.</div>
+      <div class="nota"><strong style="color:#555">Tasa anual:</strong> desde el 12.99% al 16.49%<br>*Simulación ilustrativa, no representa oferta formal.</div>
+      <div class="stitle" style="margin-top:24px">Tabla de amortización</div>
+      <table>
+        <thead><tr><th>#</th><th>Fecha</th><th>Saldo</th><th>Capital</th><th>Intereses</th><th>IVA</th><th>Mensualidad</th></tr></thead>
+        <tbody>${filas}</tbody>
+        <tfoot><tr><td colspan="3" style="text-align:right;font-size:13px">Totales</td>
+          <td>${fmx(tabla.reduce((s,r)=>s+r.capital,0))}</td>
+          <td>${fmx(totalIntereses)}</td><td>${fmx(totalIVA)}</td><td>${fmx(totalPagado)}</td>
+        </tr></tfoot>
+      </table>
+    </div></body></html>`;
+
+    const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'Cotizacion_Credimotors.html';
+    a.style.display = 'none'; document.body.appendChild(a);
+    a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},3000);
+  });
+
+  // ── WHATSAPP ──
+  document.getElementById('btn-wa').addEventListener('click', () => {
+    if (!resultado) return;
+    const { precio, enganche, monto, comision, pagoInicial, mensualidad, plazo, anio, pct } = resultado;
+    const texto = `*Simulación de crédito* — Oziel Gámez | Asesor Credimotors 811624 7199\n\n` +
+      `🚗 Año del auto: ${anio||'—'}\n` +
+      `💰 Precio: ${fmx(precio)}\n` +
+      `📦 Monto a financiar: ${fmx(monto)}\n` +
+      `💵 Enganche: ${fmx(enganche)}\n` +
+      `🏦 Comisión apertura: ${fmx(comision)}\n` +
+      `✅ Pago inicial (enganche + comisión): ${fmx(pagoInicial)}\n\n` +
+      `📅 Mensualidad aprox.: *${fmx(mensualidad)}*\n` +
+      `⏱ Plazo: ${plazo} meses\n\n` +
+      `_Las mensualidades pueden variar según perfil, plazo y condiciones de financiamiento._`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+  });
+
+  // ── INIT ──
+  renderAnios();
+  renderPlazos();
+</script>
+</body>
+</html>
